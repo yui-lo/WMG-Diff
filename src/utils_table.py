@@ -42,7 +42,7 @@ def train(
                 optimizer.step()
                 it.set_postfix(
                     ordered_dict={
-                        "avg_epoch_loss": avg_loss / batch_no,
+                        "avg_epoch_loss": (avg_loss / batch_no),
                         "epoch": epoch_no,
                     },
                     refresh=False,
@@ -92,9 +92,9 @@ def train(
 
                         it.set_postfix(
                             ordered_dict={
-                                "rmse_total": torch.mean(
+                                "rmse_total": "{:.10f}".format(torch.mean(
                                     torch.sqrt(torch.div(mse_total, evalpoints_total))
-                                ).item(),
+                                ).item()),
                                 "batch_no": batch_no,
                             },
                             refresh=True,
@@ -163,28 +163,28 @@ def evaluate(model, test_loader, nsample=100, scaler=1, mean_scaler=0, foldernam
                 )
 
             # Use folloing code for saving generated results.
-            # with open(
-            #     foldername + "/generated_outputs_nsample" + str(nsample) + ".pk", "wb"
-            # ) as f:
-            #     all_target = torch.cat(all_target, dim=0)
-            #     all_evalpoint = torch.cat(all_evalpoint, dim=0)
-            #     all_observed_point = torch.cat(all_observed_point, dim=0)
-            #     all_observed_time = torch.cat(all_observed_time, dim=0)
-            #     all_generated_samples = torch.cat(all_generated_samples, dim=0)
+            with open(
+                foldername + "/generated_outputs_nsample" + str(nsample) + ".pk", "wb"
+            ) as f:
+                all_target = torch.cat(all_target, dim=0)
+                all_evalpoint = torch.cat(all_evalpoint, dim=0)
+                all_observed_point = torch.cat(all_observed_point, dim=0)
+                all_observed_time = torch.cat(all_observed_time, dim=0)
+                all_generated_samples = torch.cat(all_generated_samples, dim=0)
 
-            #     pickle.dump(
-            #         [
-            #             # shape: [len(test_dataset), nsample, L, K]]
-            #             all_generated_samples,
-            #             all_target,
-            #             all_evalpoint,
-            #             all_observed_point,
-            #             all_observed_time,
-            #             scaler,
-            #             mean_scaler,
-            #         ],
-            #         f,
-            #     )
+                pickle.dump(
+                    [
+                        # shape: [len(test_dataset), nsample, L, K]]
+                        all_generated_samples,
+                        all_target,
+                        all_evalpoint,
+                        all_observed_point,
+                        all_observed_time,
+                        scaler,
+                        mean_scaler,
+                    ],
+                    f,
+                )
 
             with open(foldername + "/result_nsample" + str(nsample) + ".pk", "wb") as f:
                 pickle.dump(

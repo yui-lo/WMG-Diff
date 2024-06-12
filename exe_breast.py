@@ -3,6 +3,7 @@ import torch
 import datetime
 import json
 import yaml
+import datetime
 import os
 
 from src.main_model_table import TabCSDI
@@ -11,9 +12,9 @@ from dataset_breast import get_dataloader
 
 parser = argparse.ArgumentParser(description="TabCSDI")
 parser.add_argument("--config", type=str, default="breast.yaml")
-parser.add_argument("--device", default="cpu", help="Device")
+parser.add_argument("--device", default="cuda", help="Device")
 parser.add_argument("--seed", type=int, default=1)
-parser.add_argument("--testmissingratio", type=float, default=0.2)
+parser.add_argument("--testmissingratio", type=float, default=0.1)
 parser.add_argument("--nfold", type=int, default=5, help="for 5-fold test")
 parser.add_argument("--unconditional", action="store_true", default=0)
 parser.add_argument("--modelfolder", type=str, default="")
@@ -23,6 +24,8 @@ args = parser.parse_args()
 print(args)
 
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+start_time = datetime.datetime.now()
+print("Start time:", start_time.strftime("%Y-%m-%d %H:%M:%S"))
 
 path = "config/" + args.config
 with open(path, "r") as f:
@@ -63,3 +66,9 @@ else:
     model.load_state_dict(torch.load("./save/" + args.modelfolder + "/model.pth"))
 print("---------------Start testing---------------")
 evaluate(model, test_loader, nsample=args.nsample, scaler=1, foldername=foldername)
+complete_time = datetime.datetime.now()
+print("Complete time:", complete_time.strftime("%Y-%m-%d %H:%M:%S"))
+
+# Calculate and print the duration
+duration = complete_time - start_time
+print("Duration:", duration)

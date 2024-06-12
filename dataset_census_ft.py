@@ -14,6 +14,7 @@ from torch.utils.data import DataLoader, Dataset
 def process_func(path: str, cat_list, missing_ratio=0.1, encode=True):
 
     data = pd.read_csv(path, header=None)
+    data.replace("?", np.nan, inplace=True)
 
     # Swap columns
     temp_list = [i for i in range(data.shape[1]) if i not in cat_list]
@@ -94,18 +95,18 @@ def process_func(path: str, cat_list, missing_ratio=0.1, encode=True):
 
 class tabular_Dataset(Dataset):
     # eval_length should be equal to attributes number.
-    def __init__(self, eval_length=15, use_index_list=None, missing_ratio=0.1, seed=0):
+    def __init__(self, eval_length=954, use_index_list=None, missing_ratio=0.1, seed=0):
         self.eval_length = eval_length
         np.random.seed(seed)
 
-        dataset_path = "./data_census_ft/adult_trim.data"
+        dataset_path = "./data_census_ft/ABCD.data"
         processed_data_path = (
             f"./data_census_ft/missing_ratio-{missing_ratio}_seed-{seed}.pk"
         )
         processed_data_path_norm = f"./data_census_ft/missing_ratio-{missing_ratio}_seed-{seed}_max-min_norm.pk"
 
         # self.cont_cols is only saved in .pk file before normalization.
-        cat_list = [1, 3, 5, 6, 7, 8, 9, 13, 14]
+        cat_list = []
         if not os.path.isfile(processed_data_path):
             (
                 self.observed_values,

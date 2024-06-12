@@ -63,8 +63,8 @@ class diff_CSDI(nn.Module):
 
         self.token_emb_dim = config["token_emb_dim"] if config["mixed"] else 1
         inputdim = 2 * self.token_emb_dim
-
         self.input_projection = Conv1d_with_init(inputdim, self.channels, 1)
+        #self.input_projection = Conv1d_with_init(1, self.channels, 1) #自己写的
         self.output_projection1 = Conv1d_with_init(self.channels, self.channels, 1)
         self.output_projection2 = Conv1d_with_init(self.channels, self.token_emb_dim, 1)
         nn.init.zeros_(self.output_projection2.weight)

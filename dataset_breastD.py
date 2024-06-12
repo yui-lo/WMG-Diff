@@ -8,9 +8,7 @@ from torch.utils.data import DataLoader, Dataset
 
 
 def process_func(path: str, aug_rate=1, missing_ratio=0.1):
-    data = pd.read_csv(path, header=None)
-
-    data = data.iloc[:, 2:]
+    data = pd.read_csv(path, header=None).iloc[:, 1:]
     data.replace("?", np.nan, inplace=True)
     data_aug = pd.concat([data] * aug_rate)
 
@@ -18,7 +16,7 @@ def process_func(path: str, aug_rate=1, missing_ratio=0.1):
     observed_masks = ~np.isnan(observed_values)
 
     masks = observed_masks.copy()
-    # for each column, mask `missing_ratio` % of observed values.
+    # for each column, mask {missing_ratio} % of observed values.
     for col in range(observed_values.shape[1]):  # col #
         obs_indices = np.where(masks[:, col])[0]
         miss_indices = np.random.choice(
@@ -29,28 +27,26 @@ def process_func(path: str, aug_rate=1, missing_ratio=0.1):
     gt_masks = masks.reshape(observed_masks.shape)
 
     observed_values = np.nan_to_num(observed_values)
-
-    # observed_masks: 0 for missing elements
-    observed_masks = observed_masks.astype(int)  # "float32"
-    gt_masks = gt_masks.astype("float32")
+    observed_masks = observed_masks.astype(int)
+    gt_masks = gt_masks.astype(int)
 
     return observed_values, observed_masks, gt_masks
 
 
 class tabular_dataset(Dataset):
-    # eval_length should be equal to feature number.
+    # eval_length should be equal to attributes number.
     def __init__(
-        self, eval_length=30, use_index_list=None, aug_rate=1, missing_ratio=0.1, seed=0
+        self, eval_length=953, use_index_list=None, aug_rate=1, missing_ratio=0.1, seed=0 #eval_length每次需要改
     ):
         self.eval_length = eval_length
         np.random.seed(seed)
 
-        dataset_path = "./data_breastD/breast-cancer-wisconsin-diagnostic.data"
+        dataset_path = "./data_breast/ABCD.data"
         processed_data_path = (
-            f"./data_breastD/missing_ratio-{missing_ratio}_seed-{seed}.pk"
+            f"./data_breast/missing_ratio-{missing_ratio}_seed-{seed}.pk"
         )
         processed_data_path_norm = (
-            f"./data_breastD/missing_ratio-{missing_ratio}_seed-{seed}_max-min_norm.pk"
+            f"./data_breast/missing_ratio-{missing_ratio}_seed-{seed}_max-min_norm.pk"
         )
 
         if not os.path.isfile(processed_data_path):
@@ -82,7 +78,7 @@ class tabular_dataset(Dataset):
             "observed_data": self.observed_values[index],
             "observed_mask": self.observed_masks[index],
             "gt_mask": self.gt_masks[index],
-            "timepoints": np.arange(eval_length),
+            "timepoints": np.arange(self.eval_length),
         }
         return s
 
@@ -113,19 +109,19 @@ def get_dataloader(seed=1, nfold=5, batch_size=16, missing_ratio=0.1):
 
     # Here we perform max-min normalization.
     processed_data_path_norm = (
-        f"./data_breastD/missing_ratio-{missing_ratio}_seed-{seed}_max-min_norm.pk"
+        f"./data_breast/missing_ratio-{missing_ratio}_seed-{seed}_max-min_norm.pk"
     )
     if not os.path.isfile(processed_data_path_norm):
         print(
             "--------------Dataset has not been normalized yet. Perform data normalization and store the mean value of each column.--------------"
         )
-        # Data transformation after train-test split.
+        # data transformation after train-test split.
         col_num = dataset.observed_values.shape[1]
         max_arr = np.zeros(col_num)
         min_arr = np.zeros(col_num)
         mean_arr = np.zeros(col_num)
         for k in range(col_num):
-            # Using observed_mask to avoid counting missing values (now represented as 0)
+            # Using observed_mask to avoid counting missing values.
             obs_ind = dataset.observed_masks[train_index, k].astype(bool)
             temp = dataset.observed_values[train_index, k]
             max_arr[k] = max(temp[obs_ind])
@@ -134,7 +130,7 @@ def get_dataloader(seed=1, nfold=5, batch_size=16, missing_ratio=0.1):
         print(f"--------------Min-value for each column {min_arr}--------------")
 
         dataset.observed_values = (
-            (dataset.observed_values - (min_arr - 1)) / (max_arr - min_arr + 1)
+            (dataset.observed_values - 0 + 1) / (max_arr - 0 + 1)
         ) * dataset.observed_masks
 
         with open(processed_data_path_norm, "wb") as f:

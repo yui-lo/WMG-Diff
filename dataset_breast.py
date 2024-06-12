@@ -5,9 +5,10 @@ import re
 import numpy as np
 import pandas as pd
 from torch.utils.data import DataLoader, Dataset
+import numpy as np
 
 
-def process_func(path: str, aug_rate=1, missing_ratio=0.1):
+def process_func(path: str, aug_rate=1, missing_ratio=0.2):
     data = pd.read_csv(path, header=None).iloc[:, 1:]
     data.replace("?", np.nan, inplace=True)
     data_aug = pd.concat([data] * aug_rate)
@@ -36,12 +37,15 @@ def process_func(path: str, aug_rate=1, missing_ratio=0.1):
 class tabular_dataset(Dataset):
     # eval_length should be equal to attributes number.
     def __init__(
-        self, eval_length=10, use_index_list=None, aug_rate=1, missing_ratio=0.1, seed=0
+        self, eval_length=953, use_index_list=None, aug_rate=1, missing_ratio=0.2, seed=0 #eval_length每次需要改
     ):
+        
         self.eval_length = eval_length
         np.random.seed(seed)
-
-        dataset_path = "./data_breast/breast-cancer-wisconsin.data"
+        pw_data = np.load('/home/yl493/projects/tabinput/TabCSDI/pairdist_fulllength_mean_p0.2_all.npy')
+        dataset_path = "./data_breast/ABCD.data"
+        # Set all -1 values in pw_data as np.nan
+        self.pw_data = pw_data
         processed_data_path = (
             f"./data_breast/missing_ratio-{missing_ratio}_seed-{seed}.pk"
         )
@@ -79,6 +83,7 @@ class tabular_dataset(Dataset):
             "observed_mask": self.observed_masks[index],
             "gt_mask": self.gt_masks[index],
             "timepoints": np.arange(self.eval_length),
+            "pw_data": self.pw_data,
         }
         return s
 
@@ -86,22 +91,21 @@ class tabular_dataset(Dataset):
         return len(self.use_index_list)
 
 
-def get_dataloader(seed=1, nfold=5, batch_size=16, missing_ratio=0.1):
+
+def get_dataloader(seed=1, nfold=5, batch_size=16, missing_ratio=0.2):
     dataset = tabular_dataset(missing_ratio=missing_ratio, seed=seed)
     print(f"Dataset size:{len(dataset)} entries")
 
     indlist = np.arange(len(dataset))
 
     np.random.seed(seed + 1)
-    np.random.shuffle(indlist)
+    #np.random.shuffle(indlist)
 
     tmp_ratio = 1 / nfold
-    start = (int)((nfold - 1) * len(dataset) * tmp_ratio)
-    end = (int)(nfold * len(dataset) * tmp_ratio)
-
+    start = (int)((3 - 1) * len(dataset) * tmp_ratio) #把nfold改成4了，已做5
+    end = (int)(3 * len(dataset) * tmp_ratio) #把nfold改成4了，已做5
     test_index = indlist[start:end]
     remain_index = np.delete(indlist, np.arange(start, end))
-
     np.random.shuffle(remain_index)
     num_train = (int)(len(remain_index) * 1)
     train_index = remain_index[:num_train]
@@ -128,6 +132,7 @@ def get_dataloader(seed=1, nfold=5, batch_size=16, missing_ratio=0.1):
             min_arr[k] = min(temp[obs_ind])
         print(f"--------------Max-value for each column {max_arr}--------------")
         print(f"--------------Min-value for each column {min_arr}--------------")
+
 
         dataset.observed_values = (
             (dataset.observed_values - 0 + 1) / (max_arr - 0 + 1)
